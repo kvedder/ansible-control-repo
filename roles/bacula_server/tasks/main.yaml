@@ -1,0 +1,14 @@
+- name: Include adding Bacula APT Repo Tasks
+  import_tasks: bacula_repo.yaml
+
+- name: Include adding Bacula Installation Tasks
+  import_tasks: bacula_install.yaml
+
+- name: Include adding Bacula Firewall Tasks
+  import_tasks: bacula_firewall.yaml
+
+- name: Include adding NFS Mount Tasks
+  import_tasks: nfs_mounts.yaml
+
+- name: Include bacula configs
+  import_tasks: bacula_config_files.yaml

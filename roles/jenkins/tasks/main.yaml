@@ -1,0 +1,11 @@
+- name: add jenkins apt repo
+  import_tasks: jenkins_repo.yaml
+
+- name: install jenkins
+  import_tasks: install_jenkins.yaml
+
+- name: add nginx reverse proxy
+  import_tasks: nginx_proxy.yaml
+
+- name: add jenkins firewall rules
+  import_tasks: jenkins_firewall.yaml

@@ -1,0 +1,31 @@
+- name: Ensure NetBox plugins are installed
+  ansible.builtin.pip:
+    name: >-
+      {% if plugin.url is defined %}
+      {{ plugin.url }}@{{ plugin.version }}
+      {% else %}
+      {{ plugin.name }}=={{ plugin.version }}
+      {% endif %}
+    virtualenv: "{{ netbox_location }}/venv"
+    virtualenv_python: python3
+    state: present
+  loop: "{{ netbox_plugins }}"
+  loop_control:
+    loop_var: plugin
+  become: yes
+  become_user: root
+  when: install_plugins | bool
+  register: netbox_plugin_install
+  notify:
+    - Restart Netbox
+
+
+- name: Report installed plugins
+  ansible.builtin.debug:
+    msg: "Installed {{ plugin.name }} version {{ plugin.version }}"
+  loop: "{{ netbox_plugins }}"
+  loop_control:
+    loop_var: plugin
+  when:
+    - install_plugins | bool
+    - plugin_install_results is defined

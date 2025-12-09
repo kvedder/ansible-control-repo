@@ -1,0 +1,19 @@
+- name: Gather service facts
+  ansible.builtin.service_facts:
+
+- name: Deploy custom NRPE check definitions
+  copy:
+    src: files/nrpe/basic_checks.cfg
+    dest: /etc/nagios/nrpe.d/basic_checks.cfg
+    owner: nagios
+    group: nagios
+    mode: '0644'
+  notify: Restart NRPE
+  when: >
+    (
+      'nagios-nrpe-server.service' in ansible_facts.services
+    )
+    or
+    (
+      'nrpe.service' in ansible_facts.services
+    )

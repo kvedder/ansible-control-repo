@@ -1,0 +1,53 @@
+
+
+Storage {                             # definition of myself
+  Name = bacula-sd
+  SDPort = 9103                  # Director's port
+  WorkingDirectory = "/opt/bacula/working"
+  Pid Directory = "/opt/bacula/working"
+  Maximum Concurrent Jobs = 20
+  SDAddress = x.x.x.x
+}
+
+#
+# List Directors who are permitted to contact Storage daemon
+#
+Director {
+  Name = BaculaDirector
+  Password = "####"
+}
+
+#
+# Restricted Director, used by tray-monitor to get the
+#   status of the storage daemon
+#
+Director {
+  Name = bacula-mon
+  Password = "####"
+  Monitor = yes
+}
+
+
+Device {
+  Name = BackupStore
+  Spool Directory = /spool
+  DeviceType = File
+  Media Type = File
+  Archive Device = /backups
+  Random Access = yes
+  AutomaticMount = no
+  RemovableMedia = no
+  MaximumOpenWait = 60
+  MaximumConcurrentJobs = 10
+  AlwaysOpen = yes
+  LabelMedia = yes
+  Autochanger = no
+}
+#
+# Send all messages to the Director,
+# mount messages also are sent to the email address
+#
+Messages {
+  Name = Standard
+  director = bacula-dir = all
+}

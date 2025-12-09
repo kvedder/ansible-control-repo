@@ -1,0 +1,29 @@
+- name: Restart SSH
+  ansible.builtin.service:
+    name: "{{ ssh_service_name }}"
+    state: restarted
+
+- name: Restart NRPE
+  service:
+    name: "{{ 'nagios-nrpe-server' if ansible_os_family == 'Debian' else 'nrpe' }}"
+    state: restarted
+
+- name: Restart timesyncd
+  systemd:
+    name: systemd-timesyncd
+    state: restarted
+
+- name: Restart NTP
+  service:
+    name: ntp
+    state: restarted
+
+- name: Restart Chronyd
+  service:
+    name: chronyd
+    state: restarted
+
+- name: Restart SNMPD
+  service:
+    name: snmpd
+    state: restarted

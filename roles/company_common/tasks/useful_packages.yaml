@@ -1,0 +1,11 @@
+- name: Ensure required useful packages are installed
+  ansible.builtin.package:
+    name:
+      - glances
+      - iotop
+      - qemu-guest-agent
+      - net-tools
+      - plocate
+      - vim
+      - git
+    state: present

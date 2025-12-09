@@ -1,0 +1,11 @@
+- name: Install SSL certificate and key for wildcard.provider.net
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop:
+    - { src: 'files/ssl/wildcard.provider.net.crt', dest: '/etc/ssl/certs/wildcard.provider.net.crt', mode: '0644' }
+    - { src: 'files/ssl/wildcard.provider.net.fullchain.crt', dest: '/etc/ssl/certs/wildcard.provider.net.fullchain.crt', mode: '0644' }
+    - { src: 'files/ssl/wildcard.provider.net.key', dest: '/etc/ssl/private/wildcard.provider.net.key', mode: '0600' }

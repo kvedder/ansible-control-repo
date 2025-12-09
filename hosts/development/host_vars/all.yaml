@@ -1,0 +1,5 @@
+configure_firewall: false
+ssh_keys_only: true
+
+roles:
+  - company_common

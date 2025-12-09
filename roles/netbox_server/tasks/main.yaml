@@ -1,0 +1,16 @@
+- name: install netbox
+  import_tasks: install_netbox.yaml
+
+- name: install and configure netbox/django LDAP
+  import_tasks: install_netbox_ldap.yaml
+
+- name: install and configure netbox plugins
+  import_tasks: install_netbox_plugins.yaml
+
+- name: install and configure nginx
+  import_tasks: netbox_nginx_tasks.yaml
+
+- name: add firewall rules netbox
+  import_tasks: netbox_firewall_rules.yaml
+
+

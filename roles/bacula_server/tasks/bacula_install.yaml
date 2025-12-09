@@ -1,0 +1,97 @@
+- name: Ensure postgres packages are installed
+  ansible.builtin.package:
+    name:
+      - postgresql-16
+      - python3-psycopg2
+    state: present
+
+#- name: Ensure md5 auth for bacula user is inserted before general peer rule
+#  become: true
+#  blockinfile:
+#    path: /etc/postgresql/16/main/pg_hba.conf
+#    marker: "# {mark} ANSIBLE MANAGED: bacula password access"
+#    block: |
+#      local   all             bacula                                  md5
+#    insertafter: '^# "local" is for Unix domain socket connections only'
+#  notify: Restart PostgreSQL
+#
+#
+#- name: Apply pg_hba.conf changes immediately
+#  meta: flush_handlers
+
+- name: Create Bacula PostgreSQL user
+  become: true
+  become_user: postgres
+  postgresql_user:
+    name: "{{ bacula_postgres_user }}"
+    password: "{{ bacula_postgres_password }}"
+    state: present
+
+- name: Preseed debconf to disable dbconfig-common for Bacula (PostgreSQL)
+  debconf:
+    name: bacula-postgresql
+    question: "{{ item.question }}"
+    value: "{{ item.value }}"
+    vtype: "{{ item.vtype }}"
+  loop:
+    - { question: "bacula-postgresql/dbconfig-install",  value: "false", vtype: "boolean" }
+    - { question: "bacula-postgresql/dbconfig-remove",   value: "false", vtype: "boolean" }
+    - { question: "bacula-postgresql/dbconfig-upgrade",  value: "false", vtype: "boolean" }
+    - { question: "bacula-postgresql/remote-connection", value: "false", vtype: "boolean" }
+    - { question: "bacula-postgresql/dbconfig-reinstall", value: "false", vtype: "boolean" }
+
+- name: Ensure bacula packages are installed
+  ansible.builtin.package:
+    name:
+      - bacula
+      - bacula-postgresql
+    state: present
+
+- name: Create Database
+  become: true
+  become_user: postgres
+  command: ./create_postgresql_database
+  args:
+    chdir: /opt/bacula/scripts
+#  environment:
+#    PGPASSWORD: "{{ bacula_postgres_password }}"
+  when: bacula_initialize_schema | default(true)
+
+- name: Run make_postgresql_tables as bacula user
+  become: true
+  become_user: postgres
+  command: ./make_postgresql_tables
+  args:
+    chdir: /opt/bacula/scripts
+#  environment:
+#    PGPASSWORD: "{{ bacula_postgres_password }}"
+  when: bacula_initialize_schema | default(true)
+
+- name: Run grant_postgresql_privileges as postgres to grant bacula access
+  become: true
+  become_user: postgres
+  command: ./grant_postgresql_privileges
+  args:
+    chdir: /opt/bacula/scripts
+#  environment:
+#    PGPASSWORD: "{{ bacula_postgres_password }}"
+  when: bacula_initialize_schema | default(true)
+
+- name: Deploy Bacula Director configuration
+  template:
+    src: templates/bacula-dir.conf.j2
+    dest: /opt/bacula/etc/bacula-dir.conf
+    owner: bacula
+    group: bacula
+    mode: '0640'
+  notify: Restart bacula-dir
+
+- name: Deploy Bacula Storage Director configuration
+  template:
+    src: templates/bacula-sd.conf.j2
+    dest: /opt/bacula/etc/bacula-sd.conf
+    owner: bacula
+    group: bacula
+    mode: '0640'
+  notify: Restart bacula-sd
+

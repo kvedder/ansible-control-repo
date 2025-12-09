@@ -1,0 +1,30 @@
+- name: Install Java
+  ansible.builtin.apt:
+    name: openjdk-21-jre
+    state: present
+
+- name: Install Fonts
+  ansible.builtin.apt:
+    name: fontconfig
+    state: present
+
+- name: Install Jenkins
+  ansible.builtin.apt:
+    name: jenkins
+    state: present
+
+- name: Ensure Jenkins service is started and enabled
+  ansible.builtin.service:
+    name: jenkins
+    state: started
+    enabled: yes
+
+- name: Ensure Jenkins service is restarted if not running
+  ansible.builtin.systemd:
+    name: jenkins
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+  when: >
+    ansible_facts.services['jenkins.service'] is defined and
+    ansible_facts.services['jenkins.service'].state != 'running'

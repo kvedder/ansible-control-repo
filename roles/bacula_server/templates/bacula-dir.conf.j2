@@ -1,0 +1,140 @@
+
+Director {                            # define myself
+  Name = BaculaDirector
+  DIRport = 9101                # where we listen for UA connections
+  QueryFile = "/opt/bacula/scripts/query.sql"
+  WorkingDirectory = "/var/lib/bacula"
+  PidDirectory = "/var/run/bacula"
+  Maximum Concurrent Jobs = 30
+  Password = "####"         # Console password
+  Messages = Daemon
+}
+
+@|"sh -c 'for f in /opt/bacula/etc/clients/*.conf ; do echo @${f} ; done'" #load clients dir configs
+
+@|"sh -c 'for f in /opt/bacula/etc/jobs/*.conf ; do echo @${f} ; done'" #load jobs dir configs
+
+@|"sh -c 'for f in /opt/bacula/etc/filesets/*.conf ; do echo @${f} ; done'" #load filesets dir configs
+
+
+# Define the main nightly save backup job
+#   By default, this job will back up to disk in /nonexistant/path/to/file/archive/dir
+#Job {
+#  Name = "BackupClient1"
+#  JobDefs = "DefaultJob"
+#}
+
+#
+# When to do the backups, full backup on first sunday of the month,
+#  differential (i.e. incremental since full) every other sunday,
+#  and incremental backups other days
+Schedule {
+  Name = "WeeklyCycle"
+  Run = Full 1st sat at 23:05
+  Run = Differential 3rd-5th sat at 23:05
+  Run = Incremental mon-fri at 23:05
+}
+
+# List of files to be backed up
+
+Schedule {
+  Name = "WeeklyCycleAfterBackup"
+  Run = Full sun-sat at 23:10
+}
+
+Schedule {
+  Name = "Weekly-Full"
+  Run = Full sat at 23:05
+}
+
+
+Storage {
+  Name = BackupChassisSD
+  Address = x.x.x.x
+  SDPort = 9103
+  Password = "####"
+  Device = "BackupStore"
+  Media Type = File
+  Autochanger = no
+  Maximum Concurrent Jobs = 10
+}
+
+
+# Generic catalog service
+Catalog {
+  Name = {{ bacula_catalog_name }}
+  dbname = "bacula"
+  DB Address = "localhost"
+  dbuser = "{{ bacula_postgres_user }}"
+  dbpassword = "{{ bacula_postgres_password }}"
+}
+
+# Reasonable message delivery -- send most everything to email address
+#  and to the console
+Messages {
+  Name = Standard
+#
+# NOTE! If you send to two email or more email addresses, you will need
+#  to replace the %r in the from field (-f part) with a single valid
+#  email address in both the mailcommand and the operatorcommand.
+#  What this does is, it sets the email address that emails would display
+#  in the FROM field, which is by default the same email as they're being
+#  sent to.  However, if you send email to more than one address, then
+#  you'll have to set the FROM address manually, to a single address.
+#  for example, a 'no-reply@mydomain.com', is better since that tends to
+#  tell (most) people that its coming from an automated source.
+
+#
+# mailcommand = "/usr/sbin/bsmtp -h localhost -f \"\(Bacula\) \<%r\>\" -s \"Bacula: %t %e of %c %l\" %r"
+  mailcommand = "/usr/bin/mail -s 'Bacula: %t %e of %c %l' -r user@email.com user@email.com"
+  operatorcommand = "/usr/sbin/bsmtp -h localhost -f \"\(Bacula\) \<%r\>\" -s \"Bacula: Intervention needed for %j\" %r"
+  mail = user@email.com = all, !skipped
+  operator = user@email.com = mount
+  console = all, !skipped, !saved
+#
+# WARNING! the following will create a file that you must cycle from
+#          time to time as it will grow indefinitely. However, it will
+#          also keep all your messages if they scroll off the console.
+#
+  append = "/var/log/bacula/bacula.log" = all, !skipped
+  catalog = all
+  syslog = all, !skipped
+}
+
+
+#
+# Message delivery for daemon messages (no job).
+Messages {
+  Name = Daemon
+  mailcommand = "/usr/sbin/bsmtp -h mail.provider.net -f \"\(Bacula\) \<%r\>\" -s \"Bacula daemon message\" %r"
+ #mailcommand = "echo 'Test Postfix Bacula' | mail -s 'Postfix Bacula' providerbackups@provider.net"
+  mail = root = all, !skipped
+  console = all, !skipped, !saved
+  syslog = all, !skipped
+  append = "/var/log/bacula/bacula.log" = all, !skipped
+}
+
+
+# points to storage director on the VM, and creates a pool for backup volumes to be used on the Backup Chassis
+#
+Pool {
+  Name = BackupChassisPool
+  Pool Type = Backup
+  Storage = BackupChassisSD
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 90 days         # one year
+  Maximum Volume Bytes = 1000G          # Limit Volume size to something reasonable
+  Maximum Volumes = 100               # Limit number of Volumes in Pool
+  Label Format = "VOL"                # Auto label
+}
+
+
+#
+# Restricted console used by tray-monitor to get the status of the director
+#
+Console {
+  Name = bacula-mon
+  Password = "xxxx"
+  CommandACL = status, .status
+}

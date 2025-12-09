@@ -1,0 +1,17 @@
+all:
+  children:
+    testlab:
+      hosts:
+        laboratory-ceph01:
+          ansible_host: x.x.x.x
+          ansible_user: ansible
+        laboratory-ceph02:
+          ansible_host: x.x.x.x
+          ansible_user: ansible
+        laboratory-ceph03:
+          ansible_host: x.x.x.x
+          ansible_user: ansible
+      vars:
+        ansible_ssh_private_key_file: /home/semaphore/ssh_key
+
+

@@ -1,0 +1,29 @@
+- name: "Add GitLab Runner GPG key (Debian/Ubuntu)"
+  apt_key:
+    url: "{{ gitlab_runner_repo_base }}/gpgkey"
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: "Add GitLab Runner apt repository"
+  apt_repository:
+    repo: "deb {{ gitlab_runner_repo_base }}/ubuntu/ {{ ansible_lsb.codename }} main"
+    state: present
+    update_cache: yes
+  when: ansible_os_family == 'Debian'
+
+- name: "Ensure yum-utils is installed (RHEL/CentOS)"
+  package:
+    name: yum-utils
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+- name: "Add GitLab Runner yum repository"
+  yum_repository:
+    name: gitlab-runner
+    description: "GitLab Runner repository"
+    baseurl: "{{ gitlab_runner_repo_base }}/el/$releasever/$basearch"
+    gpgkey: "{{ gitlab_runner_repo_base }}/gpgkey"
+    gpgcheck: yes
+    enabled: yes
+  when: ansible_os_family == 'RedHat'
+

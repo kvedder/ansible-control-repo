@@ -1,0 +1,13 @@
+
+- name: Create PostgreSQL users
+  become: true
+  become_user: postgres
+  community.postgresql.postgresql_user:
+    name: "{{ item.name }}"
+    password: "{{ item.password | default(omit) }}"
+    role_attr_flags: "{{ item.role_attr_flags | default('LOGIN') }}"
+    state: present
+    login_user: postgres
+  loop: "{{ postgres_users }}"
+  when: postgres_users | length > 0
+

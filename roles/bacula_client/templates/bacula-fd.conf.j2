@@ -1,0 +1,34 @@
+Director {
+    Name     = BaculaDirector
+    Password = {{ bacula_client_password }}
+    TLS Enable = no
+    TLS PSK Enable = no
+
+}
+
+Director {
+    Name     = BaculaDirector-mon
+    Password = "####"
+    Monitor  = yes
+
+}
+
+FileDaemon {
+    Name                    = {{ ansible_hostname }}
+    FDAddresses             = {
+        ipv4 = {
+            addr = {{ ansible_default_ipv4.address }};
+            port = 9102;
+        }
+    }
+   WorkingDirectory = /opt/bacula/working
+   Pid Directory = /opt/bacula/working
+   Maximum Concurrent Jobs = 20
+   Plugin Directory = /opt/bacula/plugins
+}
+
+Messages {
+    Name     = Standard
+    Director = BaculaDirector-dir = all, !skipped, !restored
+    Append   = "/var/log/bacula/bacula-fd.log" = all, !skipped
+}

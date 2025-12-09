@@ -1,0 +1,40 @@
+- name: Configure all systems
+  hosts: production
+  become: true
+  gather_facts: yes
+  vars:
+    flush_iptables: true
+  pre_tasks:
+    - name: Fail early if 'configure_firewall' is missing
+      fail:
+        msg: "'configure_firewall' is not defined for this host"
+      when: configure_firewall is not defined
+
+    - name: Install Firewall
+      import_tasks: ../tasks/firewall_install.yaml
+      when: configure_firewall | bool
+
+    - name: Flush iptables if enabled
+      ansible.builtin.command: iptables -F
+      when: flush_iptables | default(false)
+
+    - name: Apply firewall pre-rules
+      import_tasks: ../tasks/firewall_pre_rules.yaml
+      when: configure_firewall | bool
+
+    - name: Ensure roles list is defined
+      assert:
+        that: roles is defined
+        fail_msg: "'roles' must be defined in host_vars for each host"
+
+  tasks:
+    - name: Dynamically apply roles per host
+      ansible.builtin.include_role:
+        name: "{{ item }}"
+      loop: "{{ roles }}"
+
+  post_tasks:
+    - name: Apply firewall post-rules
+      import_tasks: ../tasks/firewall_post_rules.yaml
+      when: configure_firewall | bool
+

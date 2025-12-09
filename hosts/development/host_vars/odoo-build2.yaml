@@ -1,0 +1,21 @@
+configure_firewall: false
+ssh_keys_only: true
+
+bacula_client_password: "xxxx"
+
+# GITLAB RUNNER CONFIG (REQUIRED TO REGISTER RUNNER)
+register_runner: true
+runner_name: odoo gitlab build runner
+runner_description: "gitlab software build runner"
+runner_tags: "tag12"
+project_id: 307
+gitlab_url: https://gitlab.provider.net
+repo_token: ff-fffff
+
+
+roles:
+  - company_common
+  - docker_ce
+  - portainer
+  - gitlab_access
+  - jenkins_agent

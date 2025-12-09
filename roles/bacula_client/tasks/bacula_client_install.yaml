@@ -1,0 +1,15 @@
+- name: Ensure bacula packages are installed
+  ansible.builtin.package:
+    name:
+      - bacula-client
+    state: present
+
+
+- name: Deploy Bacula Client Config
+  ansible.builtin.template:
+    src: bacula-fd.conf.j2
+    dest: "/opt/bacula/etc/bacula-fd.conf"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Bacula Client

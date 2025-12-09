@@ -1,0 +1,32 @@
+- name: Gather OS family
+  ansible.builtin.set_fact:
+    os_family: "{{ ansible_facts['os_family'] | lower }}"
+
+- name: Ensure iptables persistence tools are installed (Debian/Ubuntu)
+  ansible.builtin.package:
+    name: iptables-persistent
+    state: present
+  when: os_family == "debian"
+
+- name: Save iptables rules (Debian/Ubuntu)
+  ansible.builtin.command: netfilter-persistent save
+  when: os_family == "debian"
+  changed_when: false
+
+- name: Ensure iptables-services is installed (RedHat)
+  ansible.builtin.package:
+    name: iptables-services
+    state: present
+  when: os_family == "redhat"
+
+- name: Enable iptables service (RedHat)
+  ansible.builtin.service:
+    name: iptables
+    state: started
+    enabled: true
+  when: os_family == "redhat"
+
+- name: Save iptables rules (RedHat)
+  ansible.builtin.command: service iptables save
+  when: os_family == "redhat"
+  changed_when: false

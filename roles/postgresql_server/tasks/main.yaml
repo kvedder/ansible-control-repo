@@ -1,0 +1,11 @@
+- name: Install Postgres Repo and Install Server Software
+  import_tasks: install_postgresql.yaml
+
+- name: Create Postgres Users
+  import_tasks: create_postgres_users.yaml
+
+- name: Create Postgres Databases
+  import_tasks: create_postgres_databases.yaml
+
+- name: Create Postgres pga_hba entries
+  import_tasks: create_pg_hba_entries.yaml

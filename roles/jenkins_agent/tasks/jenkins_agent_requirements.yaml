@@ -1,0 +1,38 @@
+---
+
+- name: Ensure the jenkins group exists
+  ansible.builtin.group:
+    name: jenkins
+    state: present
+
+- name: add jenkins user
+  user:
+    name: jenkins
+    shell: "/bin/bash"
+    group: jenkins          # Primary group
+    groups: docker          # Supplementary group(s)
+    append: yes             # Important: Don't remove existing groups
+    state: "present"
+    uid: "3009"
+    create_home: yes
+
+- name: Install SSH keys for jenkins user
+  ansible.posix.authorized_key:
+    user: jenkins
+    key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQChDA3hV9a/ThpVzNJOcnNhUYWFQ8JJ48DWRPhOdpJVF1H2LD4NzoT8p79rNhNSm0TcNsr/Q9fQRnCphRibEiQlhqcFOHoZCNOcaZNQv9g7dQXAPj3JSrFneh4P0URjd6q8ZZOLywVQlvKE4acIZoved/BcaRsDpQhi1VqcyT9SjbrtrEWkWTCF0+ZvHRnRknIqS4Bcn8c7Fd/mc9aWOM4S3RZKWHYHmkKBPK70lK1Rh1LcOlfnedP3gdW80pVPqGeoqey0gkr+HBkn3cHPczcN8h2u4F7NSyZVyGwNxuKur0VjPLwtEcsa2PuEa9nVQW+A8YQq5WKYdFKMBMtG0Vp1 imported-openssh-key"
+    state: present
+
+- name: Ensure Java Packages are Installed for Jenkins Agent
+  ansible.builtin.package:
+    name:
+      - openjdk-17-jre-headless
+    state: present
+
+- name: Allow group sysadmin passwordless sudo
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/jenkins
+    content: "%jenkins ALL=(ALL) NOPASSWD: ALL"
+    owner: root
+    group: root
+    mode: '0440'
+    validate: '/usr/sbin/visudo -cf %s'

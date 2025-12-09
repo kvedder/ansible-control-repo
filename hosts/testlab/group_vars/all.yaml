@@ -1,0 +1,24 @@
+ansible_become: true
+ansible_become_method: sudo
+
+## Vars for SNMP Config
+snmp_agent_address: "udp:161"
+
+snmp_ro_communities:
+  - "xxxxxx"
+
+snmp_com2sec:
+  - "readonly default xxxx"
+
+snmp_groups:
+  - "MyROGroup v2c readonly"
+
+snmp_accesses:
+  - 'MyROGroup "" any noauth exact all none none'
+
+snmp_snmptrapd_addresses:
+  - "udp:162"
+
+snmp_trap_handlers:
+  - "default /usr/bin/perl /usr/bin/traptoemail me@somewhere.local"
+  - "TRAP-TEST-MIB::demo-trap /home/user/traptest.sh demo-trap"

@@ -1,0 +1,7 @@
+configure_firewall: false
+ssh_keys_only: false
+
+roles:
+  - company_common
+  - ceph_host
+

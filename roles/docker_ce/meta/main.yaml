@@ -1,0 +1,10 @@
+---
+galaxy_info:
+  author: Kenneth Vedder
+  description: "Installs Docker Engine (docker-ce) on Debian/Ubuntu and RHEL/CentOS/Rocky"
+  license: MIT
+  min_ansible_version: 2.9
+  platforms:
+    - name: Debian
+    - name: Ubuntu
+    - name: RedHat

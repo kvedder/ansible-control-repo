@@ -1,0 +1,17 @@
+configure_firewall: true
+ssh_keys_only: true
+
+roles:
+  - company_common
+  - bacula_server
+bacula_initialize_schema: false
+bacula_postgres_database_name: bacula
+bacula_postgres_user: bacula
+bacula_postgres_password: xxxxxxxx
+bacula_catalog_name: BackupCatalog
+
+nfs_mounts:
+  - server: "xx.xx.xx.xx"
+    export: "/backupstore/newbackups"
+    mount_point: "/backups"
+

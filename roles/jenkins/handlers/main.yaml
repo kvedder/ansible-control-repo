@@ -1,0 +1,14 @@
+---
+# Handler to restart Jenkins service
+
+- name: Restart Jenkins
+  become: true
+  service:
+    name: jenkins
+    state: restarted
+
+- name: Restart nginx
+  become: true
+  service:
+    name: nginx
+    state: restarted

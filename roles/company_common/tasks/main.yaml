@@ -1,0 +1,61 @@
+- name: Include gather_service_facts tasks
+  import_tasks: gather_service_facts.yaml
+
+- name: Set modern_apt_key_supported fact
+  ansible.builtin.set_fact:
+    modern_apt_key_supported: >-
+      {{
+        (ansible_distribution == 'Ubuntu' and (ansible_distribution_major_version | int) >= 20) or
+        (ansible_distribution == 'Debian' and (ansible_distribution_major_version | int) >= 11)
+      }}
+    cacheable: true
+  when: ansible_os_family == "Debian"
+
+
+- name: Set correct SSH service name
+  ansible.builtin.set_fact:
+    ssh_service_name: >-
+      {{
+        (
+          'ssh'
+          if (ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('24.04', '>=')) or
+             (ansible_distribution == 'Debian' and ansible_distribution_version is version('12', '>='))
+          else 'sshd'
+        ) | trim
+      }}
+
+- name: Include create_users tasks
+  import_tasks: create_users.yaml
+
+- name: Include setting Timezone Tasks
+  import_tasks: timezone.yaml
+
+- name: Include grant_sudo_sysadmins tasks
+  import_tasks: grant_sudo_noc.yaml
+
+- name: Include ssh_key_only tasks
+  import_tasks: ssh_key_only.yaml
+
+- name: Include useful_packages tasks
+  import_tasks: useful_packages.yaml
+
+- name: Include vimrc_config tasks
+  import_tasks: vimrc_config.yaml
+
+- name: Include wildcard_ssl_cert tasks
+  import_tasks: wildcard_ssl_cert.yaml
+
+- name: Include install_config_nrpe tasks
+  import_tasks: install_config_nrpe.yaml
+
+- name: Include nrpe_basic_checks tasks
+  import_tasks: nrpe_basic_checks.yaml
+
+- name: Include ntp_tasks tasks
+  import_tasks: ntp_tasks.yaml
+
+- name: Include Postfix Smarthost Config
+  import_tasks: postfix_smarthost.yaml
+
+- name: Include install_snmp tasks
+  import_tasks: install_snmp.yaml

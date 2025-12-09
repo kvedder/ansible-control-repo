@@ -1,0 +1,38 @@
+- name: Ensure Bacula configuration subdirectories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: bacula
+    group: bacula
+    mode: '0755'
+  loop:
+    - /opt/bacula/etc/clients
+    - /opt/bacula/etc/jobs
+    - /opt/bacula/etc/filesets
+
+- name: Copy client configs
+  ansible.builtin.copy:
+    src: "clients/"
+    dest: "/opt/bacula/etc/clients/"
+    owner: bacula
+    group: bacula
+    mode: '0644'
+  notify: Restart bacula-dir
+
+- name: Copy job configs
+  ansible.builtin.copy:
+    src: "jobs/"
+    dest: "/opt/bacula/etc/jobs/"
+    owner: bacula
+    group: bacula
+    mode: '0644'
+  notify: Restart bacula-dir
+
+- name: Copy fileset configs
+  ansible.builtin.copy:
+    src: "filesets/"
+    dest: "/opt/bacula/etc/filesets/"
+    owner: bacula
+    group: bacula
+    mode: '0644'
+  notify: Restart bacula-dir

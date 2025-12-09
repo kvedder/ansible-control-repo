@@ -1,0 +1,6 @@
+- name: Drop all other inbound traffic
+  ansible.builtin.iptables:
+    chain: INPUT
+    jump: DROP
+    state: present
+    comment: "Drop The Rest"

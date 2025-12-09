@@ -1,0 +1,59 @@
+- name: Configure all systems
+  hosts: testlab
+  become: true
+  gather_facts: yes
+  vars:
+    flush_iptables: true
+  pre_tasks:
+    - name: Fail early if 'configure_firewall' is missing
+      fail:
+        msg: "'configure_firewall' is not defined for this host"
+      when: configure_firewall is not defined
+
+    - name: Install Firewall
+      import_tasks: ../tasks/firewall_install.yaml
+      when: configure_firewall | bool
+
+    - name: Get all iptables chains
+      shell: |
+        iptables -S | awk '/^-N/ { print $2 }'
+      register: user_defined_chains
+
+    - name: Add built-in chains manually
+      set_fact:
+        all_chains: "{{ user_defined_chains.stdout_lines + ['INPUT', 'FORWARD', 'OUTPUT', 'PREROUTING', 'POSTROUTING'] }}"
+
+    - name: Filter out Docker and routing chains
+      set_fact:
+        flushable_chains: >-
+          {{ all_chains | reject('match', '^(DOCKER|DOCKER-BRIDGE|DOCKER-CT|DOCKER-FORWARD|DOCKER-ISOLATION-STAGE-1|DOCKER-ISOLATION-STAGE-2|DOCKER-USER|PREROUTING|POSTROUTING|FORWARD)$') | list }}
+
+    - name: Flush non-Docker chains (conditionally)
+      shell: iptables -F {{ item }}
+      loop: "{{ flushable_chains }}"
+      when: flush_iptables | default(false)
+      changed_when: true
+
+
+    - name: Apply firewall pre-rules
+      import_tasks: ../tasks/firewall_pre_rules.yaml
+      when: configure_firewall | bool
+
+    - name: Ensure roles is a list
+      assert:
+        that:
+          - roles is defined
+          - roles | type_debug == "list"
+        fail_msg: "'roles' must be a YAML list in host_vars, not a string"
+
+  tasks:
+    - name: Dynamically apply roles per host
+      ansible.builtin.include_role:
+        name: "{{ item }}"
+      loop: "{{ roles }}"
+
+  post_tasks:
+    - name: Apply firewall post-rules
+      import_tasks: ../tasks/firewall_post_rules.yaml
+      when: configure_firewall | bool
+

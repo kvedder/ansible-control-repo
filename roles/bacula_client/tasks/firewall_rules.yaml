@@ -1,0 +1,9 @@
+- name: Allow Bacula Client
+  ansible.builtin.iptables:
+    chain: INPUT
+    protocol: tcp
+    destination_port:  9102
+    jump: ACCEPT
+    state: present
+    comment: "Allow Bacula Client"
+  when: configure_firewall | bool

@@ -1,0 +1,6 @@
+configure_firewall: true
+ssh_keys_only: true
+
+roles:
+  - company_common
+  - newdashboard

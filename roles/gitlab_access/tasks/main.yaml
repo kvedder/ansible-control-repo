@@ -1,0 +1,33 @@
+---
+- name: Ensure /root/.ssh directory exists
+  file:
+    path: /root/.ssh
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Copy private key to /root/.ssh/id_rsa
+  copy:
+    src: files/gitlab_private
+    dest: /root/.ssh/id_rsa
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Ensure known_hosts file exists
+  file:
+    path: /root/.ssh/known_hosts
+    state: touch
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Add GitLab known host key to /root/.ssh/known_hosts
+  lineinfile:
+    path: /root/.ssh/known_hosts
+    line: '####'
+    create: yes
+    owner: root
+    group: root
+    mode: '0644'

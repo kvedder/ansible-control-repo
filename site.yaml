@@ -1,0 +1,3 @@
+## Master Playbook File ##
+
+- import_playbook: playbooks/master.yaml

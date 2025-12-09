@@ -1,0 +1,17 @@
+- name: Restart bacula-dir
+  become: true
+  ansible.builtin.service:
+    name: bacula-dir
+    state: restarted
+
+- name: Restart bacula-sd
+  become: true
+  ansible.builtin.service:
+    name: bacula-sd
+    state: restarted
+
+- name: Restart PostgreSQL
+  become: true
+  service:
+    name: postgresql
+    state: restarted

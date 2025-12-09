@@ -1,0 +1,7 @@
+
+---
+# Handler to restart Postgres service
+- name: Restart Bacula Client
+  ansible.builtin.systemd:
+    name: bacula-fd
+    state: restarted

@@ -1,0 +1,11 @@
+configure_firewall: true
+ssh_keys_only: true
+
+bacula_client_password: "xxxxx"
+
+roles:
+  - company_common
+  - bacula_client
+  - jenkins
+
+jenkins_domain: jenkins.provider.net

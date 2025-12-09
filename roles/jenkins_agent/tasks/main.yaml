@@ -1,0 +1,3 @@
+- name: install jenkins agent requirements
+  import_tasks: jenkins_agent_requirements.yaml
+

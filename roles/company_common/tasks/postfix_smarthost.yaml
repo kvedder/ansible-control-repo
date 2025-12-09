@@ -1,0 +1,96 @@
+# Ansible task list converted from Puppet class profile::postfix_to_smarthost
+---
+- name: Install required packages
+  ansible.builtin.package:
+    name:
+      - postfix
+      - mailutils
+      - libsasl2-2
+      - libsasl2-modules
+    state: present
+
+- name: Ensure relayhost is set to mail.provider.net:587
+  ansible.builtin.lineinfile:
+    path: /etc/postfix/main.cf
+    regexp: '^relayhost\s*='
+    line: 'relayhost = mail.provider.net:587'
+    create: yes
+    state: present
+
+- name: Enforce IPv4-only protocols in Postfix
+  ansible.builtin.lineinfile:
+    path: /etc/postfix/main.cf
+    regexp: '^inet_protocols\s*='
+    line: 'inet_protocols = ipv4'
+    create: yes
+    state: present
+
+- name: Enable SASL authentication
+  ansible.builtin.lineinfile:
+    path: /etc/postfix/main.cf
+    regexp: '^smtp_sasl_auth_enable\s*='
+    line: 'smtp_sasl_auth_enable = yes'
+    create: yes
+    state: present
+
+- name: Specify SASL password map file
+  ansible.builtin.lineinfile:
+    path: /etc/postfix/main.cf
+    regexp: '^smtp_sasl_password_maps\s*='
+    line: 'smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd'
+    create: yes
+    state: present
+
+- name: Disable anonymous SASL mechanisms
+  ansible.builtin.lineinfile:
+    path: /etc/postfix/main.cf
+    regexp: '^smtp_sasl_security_options\s*='
+    line: 'smtp_sasl_security_options = noanonymous'
+    create: yes
+    state: present
+
+- name: Configure TLS certificate file location
+  ansible.builtin.lineinfile:
+    path: /etc/postfix/main.cf
+    regexp: '^smtpd_tls_cert_file\s*='
+    line: 'smtpd_tls_cert_file = /etc/ssl/certs/wildcard.provider.net.fullchain.crt'
+    create: yes
+    state: present
+
+- name: Configure TLS private key file location
+  ansible.builtin.lineinfile:
+    path: /etc/postfix/main.cf
+    regexp: '^smtpd_tls_key_file\s*='
+    line: 'smtpd_tls_key_file = /etc/ssl/private/wildcard.provider.net.key'
+    create: yes
+    state: present
+
+- name: Remove debug_peer_list entry from main.cf if present
+  ansible.builtin.lineinfile:
+    path: /etc/postfix/main.cf
+    line: 'debug_peer_list=mail.provider.net'
+    state: absent
+
+- name: Remove debug_peer_level entry from main.cf if present
+  ansible.builtin.lineinfile:
+    path: /etc/postfix/main.cf
+    line: 'debug_peer_level=3'
+    state: absent
+
+- name: Copy sasl_passwd to /etc/postfix/
+  ansible.builtin.copy:
+    src: files/postfix/sasl_passwd
+    dest: /etc/postfix/sasl_passwd
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Generate hashed map for sasl_passwd
+  ansible.builtin.command: postmap /etc/postfix/sasl_passwd
+  args:
+    creates: /etc/postfix/sasl_passwd.db
+
+- name: Ensure Postfix service is reloaded
+  ansible.builtin.service:
+    name: postfix
+    state: reloaded

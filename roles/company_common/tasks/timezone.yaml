@@ -1,0 +1,3 @@
+- name: Set timezone to America/Detroit
+  ansible.builtin.timezone:
+    name: America/Detroit

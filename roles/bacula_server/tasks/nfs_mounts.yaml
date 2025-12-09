@@ -1,0 +1,31 @@
+- name: Ensure NFS client is installed
+  ansible.builtin.package:
+    name: "{{ 'nfs-common' if ansible_os_family == 'Debian' else 'nfs-utils' }}"
+    state: present
+
+- name: Create NFS mount directories
+  ansible.builtin.file:
+    path: "{{ item.mount_point }}"
+    state: directory
+    owner: bacula
+    group: bacula
+    mode: '0755'
+  loop: "{{ nfs_mounts }}"
+
+- name: Mount NFS shares
+  ansible.builtin.mount:
+    path: "{{ item.mount_point }}"
+    src: "{{ item.server }}:{{ item.export }}"
+    fstype: nfs
+    opts: defaults
+    state: mounted
+  loop: "{{ nfs_mounts }}"
+
+- name: Ensure NFS mounts are persistent
+  ansible.builtin.mount:
+    path: "{{ item.mount_point }}"
+    src: "{{ item.server }}:{{ item.export }}"
+    fstype: nfs
+    opts: defaults
+    state: present
+  loop: "{{ nfs_mounts }}"

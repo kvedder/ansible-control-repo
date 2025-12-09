@@ -1,0 +1,18 @@
+- name: Allow password authentication for specific users (loop over user list)
+  become: yes
+  become_user: postgres
+  loop: "{{ postgres_users }}"
+  loop_control:
+    loop_var: pg_user
+  community.postgresql.postgresql_pg_hba:
+    dest: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
+    contype: host
+    databases: all
+    users: "{{ pg_user.name }}"
+    address: "127.0.0.1/32"
+    method: scram-sha-256
+    state: present
+  notify: Restart PostgreSQL
+
+- name: Ensure authentication changes applied when needed
+  ansible.builtin.meta: flush_handlers

@@ -1,0 +1,24 @@
+- name: Create Docker volume for Portainer
+  community.docker.docker_volume:
+    name: portainer_data
+    state: present
+    driver: local
+
+- name: Pull Portainer image
+  community.docker.docker_image:
+    name: portainer/portainer-ce
+    tag: lts
+    source: pull
+
+- name: Run Portainer container
+  community.docker.docker_container:
+    name: portainer
+    image: portainer/portainer-ce:lts
+    state: started
+    restart_policy: always
+    ports:
+      - "8000:8000"
+      - "9443:9443"
+    volumes:
+      - portainer_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock

@@ -1,0 +1,47 @@
+---
+- name: Install Nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+    update_cache: yes
+
+- name: Ensure SSL cert and key files exist
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop:
+    - /etc/ssl/certs/wildcard.provider.net.fullchain.crt
+    - /etc/ssl/private/wildcard.provider.net.key
+  register: ssl_files
+
+- name: Fail if SSL files are missing
+  ansible.builtin.fail:
+    msg: "One or more required SSL files are missing"
+  when: ssl_files.results | selectattr('stat.exists', 'equalto', False) | list | length > 0
+
+- name: Deploy Jenkins Nginx reverse proxy config
+  ansible.builtin.template:
+    src: jenkins.conf.j2
+    dest: /etc/nginx/sites-available/jenkins
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart nginx
+
+- name: Enable Nginx Jenkins site with Symlink
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/jenkins
+    dest: /etc/nginx/sites-enabled/jenkins
+    state: link
+    force: true
+  notify: Restart nginx
+
+- name: Remove default nginx site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Ensure nginx is running and enabled
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: yes

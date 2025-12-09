@@ -1,0 +1,8 @@
+- name: Configure Gitlab Repo
+  import_tasks: add_gitlab_repo.yaml
+
+- name: Install Gitlab Runner
+  import_tasks: install_runner.yaml
+
+- name: Register Gitlab Runner With Gitlab Server
+  import_tasks: register_runner.yaml

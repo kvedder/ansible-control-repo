@@ -1,0 +1,64 @@
+- name: Remove Vim settings to /etc/vim/vimrc on Debian/Ubuntu Old
+  blockinfile:
+    path: /etc/vim/vimrc
+    block: |
+      syntax on
+      set background=dark
+      colorscheme desert
+      set mouse-=
+    owner: root
+    group: root
+    mode: '0644'
+    create: yes
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+    state: absent
+  when: ansible_os_family == 'Debian'
+
+
+- name: Remove Vim settings to /etc/vimrc on CentOS/Rocky Old
+  blockinfile:
+    path: /etc/vimrc
+    block: |
+      syntax on
+      set background=dark
+      colorscheme desert
+      set mouse-=
+    owner: root
+    group: root
+    mode: '0644'
+    create: yes
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+    state: absent
+  when: ansible_os_family == 'RedHat'
+
+
+- name: Append Vim settings to /etc/vim/vimrc on Debian/Ubuntu
+  blockinfile:
+    path: /etc/vim/vimrc
+    block: |
+      syntax on
+      set background=dark
+      colorscheme desert
+      set mouse-=
+    marker: "\" {mark} ANSIBLE MANAGED BLOCK"
+    owner: root
+    group: root
+    mode: '0644'
+    create: yes
+  when: ansible_os_family == 'Debian'
+
+- name: Append Vim settings to /etc/vimrc on CentOS/Rocky
+  blockinfile:
+    path: /etc/vimrc
+    block: |
+      syntax on
+      set background=dark
+      colorscheme desert
+      set mouse-=
+    marker: "\" {mark} ANSIBLE MANAGED BLOCK"
+    owner: root
+    group: root
+    mode: '0644'
+    create: yes
+  when: ansible_os_family == 'RedHat'
+

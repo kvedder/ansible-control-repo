@@ -1,0 +1,57 @@
+
+
+- name: Check if runner is already registered
+  stat:
+    path: /etc/gitlab-runner/config.toml
+  register: runner_cfg
+
+- name: Create & register runner
+  block:
+
+    - name: Get GitLab Runner Token via API
+      delegate_to: localhost
+      become: false
+      vars:
+        ansible_become: false      # ← Double override become
+        ansible_connection: local  # ← Force local connection
+      uri:
+        url: "{{ gitlab_url }}/api/v4/user/runners"
+        method: POST
+        headers:
+          PRIVATE-TOKEN: "{{ repo_token }}"
+        body:
+          runner_type: project_type
+          project_id: "{{ project_id }}"
+          description: "{{ runner_description }}"
+          tag_list: "{{ runner_tags }}"
+        body_format: form-urlencoded
+        return_content: true
+        status_code: 200,201
+      register: runner_response
+
+    - name: Register GitLab Runner for Odoo builds
+      shell: >
+        gitlab-runner register --non-interactive \
+          --name "{{ runner_name }}" \
+          --url "{{ gitlab_url }}" \
+          --token "{{ runner_response.json.token }}" \
+          --request-concurrency "12" \
+          --executor "shell"
+      args:
+        creates: /etc/gitlab-runner/config.toml
+
+  when:
+    - register_runner | default(false)
+    - not runner_cfg.stat.exists
+
+- name: Allow gitlab-runner user to run sudo without password and without tty
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/gitlab-runner
+    content: |
+      Defaults:gitlab-runner !requiretty
+      gitlab-runner ALL=(ALL) NOPASSWD:ALL
+    owner: root
+    group: root
+    mode: '0440'
+    validate: 'visudo -cf %s'
+

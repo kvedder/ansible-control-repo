@@ -1,0 +1,56 @@
+- name: Set Icinga Master IP
+  set_fact:
+    icinga_master_ip: "x.x.x.x"
+
+- name: Install NRPE and plugins (Debian)
+  apt:
+    name:
+      - nagios-nrpe-server
+      - monitoring-plugins
+      - nagios-nrpe-plugin
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install NRPE and plugins (RedHat)
+  yum:
+    name:
+      - nrpe
+      - nagios-plugins-all
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Check if /etc/nagios/nrpe.cfg exists
+  ansible.builtin.stat:
+    path: /etc/nagios/nrpe.cfg
+  register: nrpe_config_stat
+
+- name: Configure NRPE allowed_hosts
+  ansible.builtin.lineinfile:
+    path: /etc/nagios/nrpe.cfg
+    regexp: '^allowed_hosts='
+    line: "allowed_hosts=x.x.x.x,x.x.x.x"
+    backup: yes
+  notify: Restart NRPE
+  when: nrpe_config_stat.stat.exists
+
+- name: Gather service facts
+  ansible.builtin.service_facts:
+
+- name: Ensure NRPE is started and enabled
+  ansible.builtin.service:
+    name: "{{ 'nagios-nrpe-server' if ansible_os_family == 'Debian' else 'nrpe' }}"
+    state: started
+    enabled: yes
+  when:
+    - "'nagios-nrpe-server.service' in ansible_facts.services or 'nrpe.service' in ansible_facts.services"
+
+- name: Allow NRPE in firewall from monitoring servers
+  ansible.builtin.iptables:
+    chain: INPUT
+    protocol: tcp
+    source: "x.x.x.x/x"
+    destination_port: 5666
+    jump: ACCEPT
+    state: present
+    comment: "Allow NRPE from Icinga"
+  when: configure_firewall | bool

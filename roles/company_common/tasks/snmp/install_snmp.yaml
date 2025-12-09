@@ -1,0 +1,35 @@
+- name: Install SNMP on RedHat-based systems
+  package:
+    name:
+      - net-snmp
+      - net-snmp-utils
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+- name: Install SNMP on Debian-based systems
+  package:
+    name: snmpd
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Deploy snmpd.conf.j2
+  template:
+    src: snmpd.conf.j2.j2
+    dest: /etc/snmp/snmpd.conf.j2
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart SNMPD
+
+- name: Ensure snmpd service is enabled and running
+  service:
+    name: snmpd
+    enabled: yes
+    state: started
+
+- name: Ensure snmptrapd service is disabled and stopped
+  service:
+    name: snmptrapd
+    enabled: no
+    state: stopped
+  ignore_errors: yes  # in case snmptrapd isn't installed

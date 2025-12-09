@@ -1,0 +1,61 @@
+
+### SNMP INSTALL
+- name: Install SNMP on RedHat-based systems
+  package:
+    name:
+      - net-snmp
+      - net-snmp-utils
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+- name: Install SNMP on Debian-based systems
+  package:
+    name: snmpd
+    state: present
+  when: ansible_os_family == 'Debian'
+
+### SNMP CONFIG
+- name: Deploy snmpd.conf.j2
+  template:
+    src: snmpd.conf.j2
+    dest: /etc/snmp/snmpd.conf.j2
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart SNMPD
+
+### SNMP SERVICES
+- name: Ensure snmpd service is enabled and running
+  service:
+    name: snmpd
+    enabled: yes
+    state: started
+
+- name: Allow SNMP in firewall from icinga
+  ansible.builtin.iptables:
+    chain: INPUT
+    protocol: tcp
+    source: "172.16.0.1"
+    destination_port: 161
+    jump: ACCEPT
+    state: present
+    comment: "Allow SNMP from Icinga"
+  when: configure_firewall | bool
+
+- name: Allow SNMP in firewall from LibreNMS
+  ansible.builtin.iptables:
+    chain: INPUT
+    protocol: tcp
+    source: "172.16.0.2"
+    destination_port: 161
+    jump: ACCEPT
+    state: present
+    comment: "Allow SNMP from LibreNMS"
+  when: configure_firewall | bool
+
+#- name: Ensure snmptrapd service is disabled and stopped
+#  service:
+#    name: snmptrapd
+#    enabled: no
+#    state: stopped
+#  ignore_errors: yes  # in case snmptrapd isn't installed

@@ -1,0 +1,16 @@
+driftfile /var/lib/ntp/ntp.drift
+
+server ntp1.provider.net iburst
+server ntp2.provider.net iburst
+server ntp3.provider.net iburst
+server ntp.ubuntu.com iburst
+
+restrict default ignore
+restrict -6 default ignore
+
+restrict ntp1.provider.net nomodify notrap nopeer noquery
+restrict ntp2.provider.net nomodify notrap nopeer noquery
+restrict ntp3.provider.net nomodify notrap nopeer noquery
+
+restrict 127.0.0.1
+restrict ::1

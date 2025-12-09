@@ -1,0 +1,7 @@
+# GROUP MASTER PLAYBOOK FILE #
+
+- import_playbook: testlab/servers.yaml
+
+- import_playbook: production/servers.yaml
+
+- import_playbook: development/servers.yaml

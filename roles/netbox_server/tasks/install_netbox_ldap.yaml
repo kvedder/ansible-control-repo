@@ -1,0 +1,28 @@
+
+- name: Ensure needed apt packages for django ldap are installed
+  package:
+    name:
+      - libldap2-dev
+      - libsasl2-dev
+    state: present
+
+- name: Deploy LDAP Config File
+  ansible.builtin.template:
+    src: ldap_config.py.j2
+    dest: "{{ netbox_location }}/netbox/netbox/ldap_config.py"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Netbox
+
+- name: Ensure Django LDAP is Installed
+  ansible.builtin.pip:
+    name: django-auth-ldap
+    virtualenv: "{{ netbox_location }}/venv"
+    virtualenv_python: python3
+    state: present
+    version: "5.2.0"
+  become: yes
+  become_user: root
+  notify:
+    - Restart Netbox

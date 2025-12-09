@@ -1,0 +1,105 @@
+---
+- name: Install Docker Engine prerequisites (Debian/Ubuntu)
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+    update_cache: yes
+  when: ansible_os_family == 'Debian'
+
+- name: Ensure apt keyrings directory exists (Debian/Ubuntu)
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  when: ansible_os_family == 'Debian'
+
+- name: Download and dearmor Docker GPG key (Debian/Ubuntu)
+  ansible.builtin.shell: |
+    set -o pipefail
+    curl -fsSL https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg \
+      | gpg --dearmor -o /etc/apt/keyrings/docker-archive-keyring.gpg
+  args:
+    creates: /etc/apt/keyrings/docker-archive-keyring.gpg
+    executable: /bin/bash
+  when: ansible_os_family == 'Debian'
+
+- name: Add Docker apt repository (Debian/Ubuntu)
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [arch=amd64 signed-by=/etc/apt/keyrings/docker-archive-keyring.gpg]
+      https://download.docker.com/linux/{{ ansible_distribution | lower }}
+      {{ ansible_lsb.codename }} stable
+    filename: docker
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Check Docker apt repository file (Debian/Ubuntu)
+  stat:
+    path: /etc/apt/sources.list.d/docker.list
+  register: docker_apt_repo
+  when: ansible_os_family == 'Debian'
+
+- name: Update apt cache (Debian/Ubuntu)
+  apt:
+    update_cache: yes
+  register: apt_cache
+  failed_when: apt_cache.failed
+  when: ansible_os_family == 'Debian'
+
+- name: Install Docker packages (Debian/Ubuntu)
+  apt:
+    name: "{{ docker_packages }}"
+    state: latest
+    update_cache: no
+  when: ansible_os_family == 'Debian' and docker_apt_repo.stat.exists and not apt_cache.failed
+  notify: restart docker
+
+- name: Install Docker Engine prerequisites (RHEL/CentOS/Rocky)
+  yum:
+    name:
+      - yum-utils
+      - device-mapper-persistent-data
+      - lvm2
+    state: present
+    update_cache: yes
+  register: yum_prereqs
+  failed_when: yum_prereqs.failed
+  when: ansible_os_family == 'RedHat'
+
+- name: Add Docker repository (RHEL/CentOS/Rocky)
+  yum_repository:
+    name: docker
+    description: Docker CE Stable - $basearch
+    baseurl: >-
+      https://download.docker.com/linux/centos/
+      {{ ansible_distribution_major_version }}/$basearch/stable
+    gpgcheck: yes
+    gpgkey: https://download.docker.com/linux/centos/gpg
+  register: docker_yum_repo_add
+  failed_when: docker_yum_repo_add.failed
+  when: ansible_os_family == 'RedHat'
+
+- name: Check Docker yum repository file (RHEL/CentOS/Rocky)
+  stat:
+    path: /etc/yum.repos.d/docker.repo
+  register: docker_yum_repo
+  when: ansible_os_family == 'RedHat'
+
+- name: Install Docker packages (RHEL/CentOS/Rocky)
+  yum:
+    name: "{{ docker_packages }}"
+    state: latest
+    update_cache: no
+  when: ansible_os_family == 'RedHat' and docker_yum_repo.stat.exists and not yum_prereqs.failed and not docker_yum_repo_add.failed
+  notify: restart docker
+
+- name: Ensure Docker service is enabled and running
+  service:
+    name: docker
+    state: started
+    enabled: yes

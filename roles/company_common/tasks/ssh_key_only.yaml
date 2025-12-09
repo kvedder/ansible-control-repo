@@ -1,0 +1,47 @@
+- name: Annotate sshd_config as managed by Ansible
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    line: '# Managed by Ansible: ssh_key_only task'
+    insertafter: BOF
+    state: present
+    create: yes
+  notify: Restart SSH
+
+- name: Ensure PubkeyAuthentication is set to yes
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^\s*#?\s*PubkeyAuthentication\s+.*'
+    line: 'PubkeyAuthentication yes'
+    backrefs: yes
+    create: yes
+  notify: Restart SSH
+
+- name: Ensure PasswordAuthentication is set to no
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^\s*#?\s*PasswordAuthentication\s+.*'
+    line: 'PasswordAuthentication no'
+    backrefs: yes
+    create: yes
+  notify: Restart SSH
+  when: ssh_keys_only | default(false) | bool
+
+- name: Ensure ChallengeResponseAuthentication is set to no
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^\s*#?\s*ChallengeResponseAuthentication\s+.*'
+    line: 'ChallengeResponseAuthentication no'
+    backrefs: yes
+    create: yes
+  notify: Restart SSH
+
+- name: Remove insecure cloud-init SSH config file
+  ansible.builtin.file:
+    path: /etc/ssh/sshd_config.d/50-cloud-init.conf
+    state: absent
+  when: ansible_distribution == "Ubuntu"
+  notify: Restart SSH
+
+- name: Debug ssh_service_name
+  debug:
+    var: ssh_service_name

@@ -1,0 +1,61 @@
+
+- name: Import Bacula GPG key (legacy)
+  ansible.builtin.apt_key:
+    url: https://www.bacula.org/downloads/Bacula-4096-Distribution-Verification-key.asc
+    state: present
+  when:
+    - ansible_os_family == "Debian"
+    - not modern_apt_key_supported
+
+- name: Download and convert Bacula GPG key to binary format
+  ansible.builtin.shell: |
+    curl -fsSL https://www.bacula.org/downloads/Bacula-4096-Distribution-Verification-key.asc | gpg --dearmor -o /usr/share/keyrings/bacula-archive-keyring.gpg
+  args:
+    creates: /usr/share/keyrings/bacula-archive-keyring.gpg
+  when:
+    - ansible_os_family == "Debian"
+    - modern_apt_key_supported
+
+- name: Add Bacula APT repository (modern signed-by style)
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/bacula-community.list
+    content: |
+      # Bacula Community
+      deb [signed-by=/usr/share/keyrings/bacula-archive-keyring.gpg arch=amd64] https://www.bacula.org/packages/{{ bacula_access_key }}/debs/{{ bacula_version }} {{ effective_codename | default(ansible_lsb.codename) }} main
+    owner: root
+    group: root
+    mode: '0644'
+  when:
+    - ansible_os_family == "Debian"
+    - modern_apt_key_supported
+  vars:
+    bacula_access_key: "681f9ede1019b"
+    bacula_version: "15.0.3"
+
+
+- name: Add Bacula APT repository (legacy)
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/bacula-community.list
+    content: |
+      # Bacula Community
+      deb [arch=amd64] https://www.bacula.org/packages/{{ bacula_access_key }}/debs/{{ bacula_version }} {{ ansible_lsb.codename }} main
+    owner: root
+    group: root
+    mode: '0644'
+  when:
+    - ansible_os_family == "Debian"
+    - not modern_apt_key_supported
+  vars:
+    bacula_access_key: "681f9ede1019b"
+    bacula_version: "15.0.3"
+
+- name: Check if Bacula APT repo is configured
+  stat:
+    path: /etc/apt/sources.list.d/bacula-community.list  # adjust if different
+  register: bacula_repo
+
+- name: Refresh APT package cache if Bacula repo is present
+  apt:
+    update_cache: yes
+  become: yes
+  when: bacula_repo.stat.exists

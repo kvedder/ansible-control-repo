@@ -1,0 +1,8 @@
+- name: Include adding Bacula APT Repo Tasks
+  import_tasks: bacula_repo.yaml
+
+- name: Include Bacula Client Install Tasks
+  import_tasks: bacula_client_install.yaml
+
+- name: Include Bacula Client Firewall Rules
+  import_tasks: firewall_rules.yaml

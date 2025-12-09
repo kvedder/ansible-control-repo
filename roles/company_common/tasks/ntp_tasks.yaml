@@ -1,0 +1,11 @@
+- name: Include Ubuntu systemd-timesyncd config
+  include_tasks: ntp/ubuntu.yaml
+  when: ansible_facts['os_family'] == "Debian" and ansible_facts['distribution'] == "Ubuntu"
+
+- name: Include Debian ntp config
+  include_tasks: ntp/debian.yaml
+  when: ansible_facts['os_family'] == "Debian" and ansible_facts['distribution'] != "Ubuntu"
+
+- name: Include RHEL/CentOS/Rocky chrony config
+  include_tasks: ntp/redhat.yaml
+  when: ansible_facts['os_family'] == "RedHat"

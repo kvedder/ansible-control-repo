@@ -1,0 +1,2 @@
+---
+gitlab_runner_repo_base: "https://packages.gitlab.com/runner/gitlab-runner"

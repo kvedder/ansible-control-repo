@@ -1,0 +1,51 @@
+configure_firewall: true
+ssh_keys_only: true
+
+bacula_client_password: "xxxx"
+
+roles:
+  - company_common
+  - postgresql_server
+  - bacula_client
+  - gitlab_access
+  - netbox_server
+
+## POSTGRES Needed Parameters
+postgres_version: 16
+postgres_install_contrib: true
+postgres_apt_repo_base: "http://apt.postgresql.org/pub/repos/apt"
+postgres_users:
+  - name: netbox
+    password: "xxxxx"
+#    password: "{{ vault_netbox_password }}"
+    role_attr_flags: "LOGIN,NOSUPERUSER,NOCREATEDB,NOCREATEROLE"
+postgres_databases:
+  - name: netbox
+    owner: netbox
+    encoding: UTF8
+    lc_collate: en_US.UTF-8
+    lc_ctype: en_US.UTF-8
+
+## NETBOX Needed Parameters
+#netbox_version: "3.7.3"
+netbox_version: "4.3.7"
+netbox_upstream_host: 127.0.0.1
+netbox_upstream_port: 8001
+netbox_server_name: netbox-dev.provider.net
+netbox_location: "/opt/netbox"
+netbox_log_directory: "/var/log/netbox"
+netbox_ldap_log_file_name: "netbox_ldap.log"
+netbox_log_file_name: "netbox.log"
+netbox_pg_dbname: "netbox"
+netbox_pg_username: "netbox"
+netbox_pg_password:  "xxxxx"
+install_plugins: true
+netbox_plugins:
+  - name: "netbox-bgp"
+    version: "0.16.1"
+    config_name: "netbox_bgp"
+
+  - name: "netbox-mpls-circuits"
+    url: "git+ssh://git@gitlab.provider.net/NetworkAutomation/netbox-mpls-circuits.git"
+    version: "0.10.0-beta5"
+    config_name: "netbox_mpls_circuits"

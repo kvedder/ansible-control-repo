@@ -1,0 +1,41 @@
+agentAddress udp:161
+
+# rocommunity strings
+{% for comm in ['######'] %}
+rocommunity {{ comm }}
+{% endfor %}
+
+# com2sec
+{% for line in ['readonly default #######'] %}
+com2sec {{ line }}
+{% endfor %}
+
+# group
+{% for group in ['MyROGroup v2c readonly'] %}
+group {{ group }}
+{% endfor %}
+
+# access
+{% for acc in ['MyROGroup "" any noauth exact all none none'] %}
+access {{ acc }}
+{% endfor %}
+
+# restrict SNMP access to certain subnets
+{% for net in ['x.x.x.x/x', 'x.x.x.x/x'] %}
+  # Note: iptables or snmpd "view" config would be required to enforce this
+  # Not directly possible in snmpd.conf as-is unless using SNMP views
+{% endfor %}
+
+# Trap destinations
+disableAuthorization yes
+{% for trap in ['udp:162'] %}
+snmpTrapdAddress {{ trap }}
+{% endfor %}
+
+# trap handlers
+{% for handler in [
+  'default /usr/bin/perl /usr/bin/traptoemail me@somewhere.local',
+  'TRAP-TEST-MIB::demo-trap /home/user/traptest.sh demo-trap'
+] %}
+traphandle {{ handler }}
+{% endfor %}

@@ -1,0 +1,56 @@
+---
+- name: Ensure required packages are installed
+  apt:
+    name:
+      - apt-transport-https
+      - wget
+      - monitoring-plugins
+    state: present
+    update_cache: yes
+  when: ansible_os_family == "Debian"
+
+- name: Set Icinga keyring URL based on distribution
+  set_fact:
+    icinga_keyring_url: >-
+      https://packages.icinga.com/icinga-archive-keyring_latest+
+      {{ 'ubuntu' if ansible_distribution == 'Ubuntu' else 'debian' }}
+      {{ ansible_distribution_version }}.deb
+  when: ansible_os_family == "Debian"
+
+- name: Download Icinga archive keyring package
+  get_url:
+    url: "{{ icinga_keyring_url | regex_replace('\\s+', '') }}"
+    dest: "/tmp/icinga-archive-keyring.deb"
+    mode: '0644'
+  when: ansible_os_family == "Debian"
+
+- name: Install Icinga keyring .deb package
+  apt:
+    deb: "/tmp/icinga-archive-keyring.deb"
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Add Icinga APT repository for Ubuntu
+  apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/icinga-archive-keyring.gpg] https://packages.icinga.com/ubuntu icinga-{{ ansible_distribution_release | lower }} main"
+    state: present
+    filename: "icinga"
+    update_cache: yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: Add Icinga APT repository for Debian
+  apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/icinga-archive-keyring.gpg] https://packages.icinga.com/debian icinga-{{ ansible_distribution_release | lower }} main"
+    state: present
+    filename: "icinga"
+    update_cache: yes
+  when: ansible_distribution == "Debian"
+
+- name: Ensure required packages are installed
+  apt:
+    name:
+      - monitoring-plugins
+      - icinga2
+    state: present
+    update_cache: yes
+  when: ansible_os_family == "Debian"

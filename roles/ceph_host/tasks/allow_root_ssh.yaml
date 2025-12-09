@@ -1,0 +1,17 @@
+- name: Ensure root user has a password
+  user:
+    name: "root"
+    shell: "/bin/bash"
+    create_home: yes
+    password: "$6$QIEegBf2ZNFY6AzI$E91Qu/hSeVT8U/av3mw5771tWtZADqInDAqYtj/kSDDQUZQ4VSj3FUNtxiC8IRWXdWRANOjdRZgvzP8wKXKem/"
+
+
+
+- name: Ensure ChallengeResponseAuthentication is set to no
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^\s*#?\s*PermitRootLogin\s+.*'
+    line: 'PermitRootLogin yes'
+    backrefs: yes
+    create: yes
+  notify: Restart SSH

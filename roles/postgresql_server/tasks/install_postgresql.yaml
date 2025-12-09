@@ -1,0 +1,51 @@
+---
+- name: Ensure PostgreSQL Python library is installed
+  ansible.builtin.apt:
+    name: python3-psycopg2
+    state: present
+
+- name: Ensure prerequisites for APT repositories are installed
+  ansible.builtin.apt:
+    name:
+      - gnupg
+      - ca-certificates
+      - lsb-release
+    state: present
+    update_cache: yes
+
+- name: Add PostgreSQL APT repository key
+  ansible.builtin.apt_key:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+
+- name: Add PostgreSQL APT repository
+  ansible.builtin.apt_repository:
+    repo: "deb {{ postgres_apt_repo_base }} {{ ansible_distribution_release }}-pgdg main"
+    filename: "postgres"
+    state: present
+
+- name: Update apt cache after repo add
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Install PostgreSQL server
+  ansible.builtin.apt:
+    name:
+      - "postgresql-{{ postgres_version }}"
+      - "{{ 'postgresql-contrib-%s' | format(postgres_version) if postgres_install_contrib else omit }}"
+    state: present
+
+- name: Ensure PostgreSQL service is enabled and started
+  ansible.builtin.systemd:
+    name: "postgresql"
+    enabled: true
+    state: started
+
+- name: Verify PostgreSQL version
+  ansible.builtin.command: "psql --version"
+  register: psql_version
+  changed_when: false
+
+- name: Display installed PostgreSQL version
+  ansible.builtin.debug:
+    msg: "Installed PostgreSQL version: {{ psql_version.stdout }}"

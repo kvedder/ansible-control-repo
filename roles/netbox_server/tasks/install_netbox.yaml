@@ -1,0 +1,131 @@
+- name: Ensure python3 and venv module are installed
+  package:
+    name:
+      - python3
+      - python3-venv
+      - python3-pip
+      - python3-dev
+    state: present
+
+- name: Ensure needed apt packages for netbox are installed
+  package:
+    name:
+      - build-essential
+      - libxml2-dev
+      - libxslt1-dev
+      - libffi-dev
+      - libpq-dev
+      - libssl-dev
+      - zlib1g-dev
+      - redis-server
+    state: present
+
+- name: Ensure NetBox repository is present and up to date
+  ansible.builtin.git:
+    repo: "git@gitlab.provider.net:apps/netbox.git"
+    dest: "{{ netbox_location }}"
+    version: "v{{ netbox_version }}"
+    update: yes
+    force: yes
+    accept_hostkey: yes
+  notify:
+    - Restart Netbox
+
+#  become: yes
+#  become_user: pkg
+
+- name: Create a Python virtual environment
+  ansible.builtin.command:
+    cmd: python3 -m venv /opt/netbox/venv
+    creates: "{{ netbox_location }}/venv/bin/activate"
+
+
+- name: Install dependencies into the virtualenv
+  ansible.builtin.pip:
+    requirements: "{{ netbox_location }}/requirements.txt"
+    virtualenv: "{{ netbox_location }}/venv"
+    virtualenv_python: python3
+    state: present
+
+- name: Deploy gunicorn config file for netbox
+  ansible.builtin.copy:
+    src: gunicorn_config.py
+    dest: "{{ netbox_location }}/gunicorn_config.py"
+    owner: root
+    group: root
+    mode: '0644'
+
+
+- name: Deploy NetBox Config (v3.x and older)
+  ansible.builtin.template:
+    src: configuration_v3.py.j2
+    dest: "{{ netbox_location }}/netbox/netbox/configuration.py"
+    owner: root
+    group: root
+    mode: '0644'
+  when: (netbox_version | string) is version('4.0', '<')
+  notify: Restart Netbox
+
+- name: Deploy NetBox Config (v4.x and newer)
+  ansible.builtin.template:
+    src: configuration_v4.py.j2
+    dest: "{{ netbox_location }}/netbox/netbox/configuration.py"
+    owner: root
+    group: root
+    mode: '0644'
+  when: (netbox_version | string) is version('4.0', '>=')
+  notify: Restart Netbox
+
+- name: Ensure NetBox log directory exists
+  ansible.builtin.file:
+    path: "{{ netbox_log_directory }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: Ensure netbox.log file exists
+  ansible.builtin.file:
+    path: "{{ netbox_log_directory }}/{{ netbox_log_file_name }}"
+    state: touch
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
+- name: Ensure django-ldap-debug.log file exists
+  ansible.builtin.file:
+    path: "{{ netbox_log_directory }}/{{ netbox_ldap_log_file_name }}"
+    state: touch
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
+- name: Install NetBox-RQ systemd service file
+  ansible.builtin.copy:
+    src: netbox-rq.service
+    dest: /etc/systemd/system/netbox-rq.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload systemd daemon
+
+- name: Enable and start NetBox-RQ service
+  ansible.builtin.systemd:
+    name: netbox-rq
+    enabled: yes
+    state: started
+
+- name: Install NetBox systemd service file
+  ansible.builtin.copy:
+    src: netbox.service
+    dest: /etc/systemd/system/netbox.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload systemd daemon
+
+- name: Enable and start NetBox service
+  ansible.builtin.systemd:
+    name: netbox
+    enabled: yes
+    state: started

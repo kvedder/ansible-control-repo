@@ -1,0 +1,10 @@
+- name: "Install gitlab-runner"
+  package:
+    name: gitlab-runner
+    state: latest
+
+- name: Ensure gitlab-runner service is enabled and running
+  service:
+    name: gitlab-runner
+    state: started
+    enabled: yes

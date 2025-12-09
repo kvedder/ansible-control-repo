@@ -1,0 +1,45 @@
+# this task creates the users on whatever servers its assigned to
+# create groups
+- name: Ensure the noc group exists
+  ansible.builtin.group:
+    name: noc
+    state: present
+
+# build the list of users and set as a fact
+- name: Set list of users
+  ansible.builtin.set_fact:
+    user_list:
+      - name: 'jdoe'
+        shell: /bin/bash
+        group: 'noc'
+        state: present
+        uid: '1080'
+        ssh_keys:
+          - "ssh-rsa blah blah blah"
+
+- name: Ensure users are managed
+  user:
+    name: "{{ user.name }}"
+    shell: "{{ user.shell | default('/bin/bash') }}"
+    group: "{{ user.group | default(omit) }}"
+    state: "{{ user.state | default('present') }}"
+    uid: "{{ user.uid }}"
+    create_home: yes
+    password: "{{ user.password | default(omit) }}"
+  loop: "{{ user_list }}"
+  loop_control:
+    loop_var: user
+
+- name: Install SSH keys for users
+  ansible.posix.authorized_key:
+    user: "{{ user.name }}"
+    key: "{{ ssh_key }}"
+    state: present
+  when: user.ssh_keys is defined and user.ssh_keys | length > 0
+  loop: "{{ user_list | subelements('ssh_keys', skip_missing=True) }}"
+  loop_control:
+    loop_var: item
+  vars:
+    user: "{{ item.0 }}"
+    ssh_key: "{{ item.1 }}"
+
